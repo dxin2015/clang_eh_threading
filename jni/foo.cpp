@@ -2,7 +2,9 @@
 #include <vector>
 #include <chrono>
 #include <omp.h>
-const int TEST_NUM_THREADS=32;
+const int MAX_NUM_THREADS = 64;
+const int RUN_PER_THREAD = 1024;
+const int CHUNK = 256;
 
 class Timer {
 public:
@@ -43,10 +45,10 @@ static void foo(std::vector<std::chrono::microseconds>& record)
 }
 
 int main(int argc, char**) {
-    for(int t = 1;t<=64;t=t<<1){
+    for(int t = 1;t<=MAX_NUM_THREADS;t=t<<1){
        std::vector<std::vector<std::chrono::microseconds>> record(t);
-       #pragma omp parallel for num_threads(t)
-        for(int i=0;i<10000;i++){
+       #pragma omp parallel for num_threads(t) schedule(dynamic, CHUNK)
+        for(int i=0;i<RUN_PER_THREAD*MAX_NUM_THREADS;i++){
             try {
                 foo(record[omp_get_thread_num()]);
             }catch (...){
